@@ -1,0 +1,347 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My App - Main Page</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- 스타일 적용 -->
+
+</head>
+<body>
+    <!-- 헤더 -->
+    <header>
+        <h2>My App</h2>
+        <nav>
+            <ul>
+                <li><a href="{% url 'myapp:main_page' %}">홈</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'myapp:logout' %}">로그아웃</a></li>
+                    <li><a href="#">마이페이지</a></li>
+                {% else %}
+                    <li><a href="{% url 'myapp:signup' %}" id="signupLink">회원가입</a></li>
+                    <li><a href="{% url 'myapp:login' %}" id="loginLink">로그인</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main>
+        <!-- 사이드바 -->
+        <aside>
+            <ul>
+                <li><a href="#">시작하기</a></li>
+                <li><a href="#">빠른 메모</a></li>
+                <li><a href="#">작업 목록</a></li>
+                <li><a href="#">Notion AI</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="#">마이페이지</a></li>
+                {% endif %}
+            </ul>
+        </aside>
+
+        <!-- 본문 -->
+        <section>
+            <div class="block">
+                <h3>환영합니다!</h3>
+                <p>이곳에서 원하는 작업을 관리하세요.</p>
+            </div>
+            <div class="block">
+                <h3>📌 빠른 메모</h3>
+                <p>할 일이나 중요한 내용을 빠르게 기록하세요.</p>
+            </div>
+            <div class="block">
+                <h3>✅ 작업 목록</h3>
+                <p>완료해야 할 작업을 관리하세요.</p>
+            </div>
+            <div class="block">
+                <h3>💬 Notion AI</h3>
+                <p>AI에게 업무 피드백을 받아보세요.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- 푸터 -->
+    <footer>
+        <p>&copy; 2025 MyApp.</p>
+    </footer>
+
+    <!-- 회원가입 모달 -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <h3 class="signup-h3">회원가입</h3>
+            <form id="signupForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="email">이메일</label>
+                    <input type="email" name="email" id="email" required>
+                    <div id="emailError" class="error-message">유효한 이메일 형식이 아닙니다.</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" name="password" id="password" required>
+                    <div id="passwordError" class="error-message">
+                        비밀번호는 8~16자 영문 대소문자, 숫자, 특수문자를 포함해야 합니다.
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password_confirm">비밀번호 확인</label>
+                    <input type="password" name="password_confirm" id="password_confirm" required>
+                    <div id="passwordMismatchMessage" class="error-message">비밀번호가 일치하지 않습니다.</div>
+                </div>
+                <div class="form-group">
+                    <label for="name">이름</label>
+                    <input type="text" name="name" id="name" required>
+                    <div id="nameError" class="error-message">이름을 입력해 주세요.</div>
+                </div>
+                <div class="form-group">
+                    <label for="birth_date">생년월일</label>
+                    <input type="date" name="birth_date" id="birth_date" required>
+                    <div id="birthError" class="error-message">생년월일을 입력해 주세요.</div>
+                </div>
+                <div class="form-group">
+                    <label for="phone_number">전화번호</label>
+                    <input type="text" name="phone_number" id="phone_number" required>
+                    <div id="phoneError" class="error-message">전화번호를 입력해 주세요.</div>
+                </div>
+                <button type="submit" class="btn signup-btn">회원가입</button>
+            </form>
+            <p id="errorMessage" style="color:red;"></p>
+            <p id="successMessage" style="color:green;"></p>
+        </div>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span id="closeLoginModalBtn" class="close-btn">&times;</span>
+            <h3 class="login-h3">로그인</h3>
+            <form id="loginForm" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="loginEmail">이메일:</label>
+                    <input type="email" id="loginEmail" name="email" required placeholder="이메일을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">비밀번호:</label>
+                    <input type="password" id="loginPassword" name="password" required placeholder="비밀번호를 입력하세요">
+                </div>
+                <button type="submit" class="login-btn">로그인</button>
+                <p id="loginErrorMessage" class="error-message">로그인에 실패했습니다. 다시 시도해주세요.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const signupLink = document.getElementById("signupLink");
+            const signupModal = document.getElementById("signupModal");
+            const closeModalBtn = document.getElementById("closeModalBtn");
+            const signupForm = document.getElementById("signupForm");
+
+            // 모달 열기
+            signupLink.onclick = function(event) {
+                event.preventDefault();
+                signupModal.style.display = "block";
+            };
+
+            // 모달 닫기
+            closeModalBtn.onclick = function() {
+                signupModal.style.display = "none";
+            };
+
+            // 입력 필드 요소 가져오기
+            const emailField = document.getElementById("email");
+            const passwordField = document.getElementById("password");
+            const passwordConfirmField = document.getElementById("password_confirm");
+            const nameField = document.getElementById("name");
+            const birthDateField = document.getElementById("birth_date");
+            const phoneField = document.getElementById("phone_number");
+
+            // 오류 메시지 요소 가져오기
+            const emailError = document.getElementById("emailError");
+            const passwordError = document.getElementById("passwordError");
+            const passwordMismatchError = document.getElementById("passwordMismatchMessage");
+            const nameError = document.getElementById("nameError");
+            const birthError = document.getElementById("birthError");
+            const phoneError = document.getElementById("phoneError");
+
+            // 실시간 입력 검증 이벤트 추가
+            emailField.addEventListener("input", () => {
+                emailError.style.display = validateEmail(emailField.value) ? "none" : "block";
+            });
+
+            passwordField.addEventListener("input", () => {
+                passwordError.style.display = validatePassword(passwordField.value) ? "none" : "block";
+            });
+
+            passwordConfirmField.addEventListener("input", () => {
+                passwordMismatchError.style.display = (passwordField.value === passwordConfirmField.value) ? "none" : "block";
+            });
+
+            nameField.addEventListener("input", () => {
+                nameError.style.display = nameField.value.trim() ? "none" : "block";
+            });
+
+            birthDateField.addEventListener("input", () => {
+                birthError.style.display = birthDateField.value ? "none" : "block";
+            });
+
+            phoneField.addEventListener("input", () => {
+                phoneError.style.display = phoneField.value ? "none" : "block";
+            });
+
+            // 회원가입 폼 제출 이벤트 처리
+            signupForm.onsubmit = function(event) {
+                event.preventDefault();
+
+                let formData = new FormData(signupForm);
+                let hasError = false;
+
+                // 기본적으로 모든 오류 메시지 숨기기
+                document.querySelectorAll(".error-message").forEach(msg => msg.style.display = "none");
+
+                // 입력 필드 검증
+                if (!validateEmail(emailField.value)) {
+                    emailError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (!validatePassword(passwordField.value)) {
+                    passwordError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (passwordField.value !== passwordConfirmField.value) {
+                    passwordMismatchError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (!nameField.value.trim()) {
+                    nameError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (!birthDateField.value) {
+                    birthError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (!phoneField.value) {
+                    phoneError.style.display = "block";
+                    hasError = true;
+                }
+
+                if (hasError) return;
+
+                // CSRF 토큰은 {% csrf_token %}에 의해 formData에 자동 포함됨
+                fetch("{% url 'myapp:signup' %}", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("회원가입 응답:", data); // 응답 확인
+
+                    document.getElementById("errorMessage").innerText = "";
+                    document.getElementById("successMessage").innerText = "";
+
+                    if (data.success) {
+                        // 회원가입 완료 알림
+                        alert("회원가입이 완료되었습니다!");
+
+                        signupModal.style.display = "none";
+
+                        // 회원가입 성공 후 main_page로 리디렉션
+                        window.location.href = "{% url 'myapp:main_page' %}";
+                    } else {
+                        document.getElementById("errorMessage").innerText = data.message || data.error;
+                    }
+                })
+                .catch(error => {
+                    console.error('회원가입 Error:', error);
+                    alert("회원가입 중 오류가 발생했습니다.");
+                });
+            };
+
+            // 이메일 형식 검증
+            function validateEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            // 비밀번호 형식 검증 (영문 + 숫자 + 특수문자 조합, 8~16자)
+            function validatePassword(password) {
+                const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d@$!%*?&]{8,16}$/;
+                return passwordRegex.test(password);
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const loginLink = document.getElementById("loginLink");
+            const loginModal = document.getElementById("loginModal");
+            const closeLoginModalBtn = document.getElementById("closeLoginModalBtn");
+            const loginForm = document.getElementById("loginForm");
+
+            // 로그인 모달 열기
+            loginLink.onclick = function(event) {
+                event.preventDefault();
+                loginModal.style.display = "block";
+            };
+
+            // 로그인 모달 닫기
+            closeLoginModalBtn.onclick = function() {
+                loginModal.style.display = "none";
+            };
+
+            // 로그인 폼 제출 이벤트 처리
+            loginForm.onsubmit = function(event) {
+                event.preventDefault();
+
+                let formData = new FormData(loginForm);
+
+                fetch("{% url 'myapp:login' %}", { // 로그인 뷰 URL에 맞게 변경
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie('csrftoken'), // CSRF 토큰 추가
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        window.location.href = data.redirect_url;  // 기본 URL (main_page)로 리디렉션
+                    } else {
+                        document.getElementById("loginErrorMessage").style.display = "block";
+                        document.getElementById("loginErrorMessage").innerText = data.message || "로그인 실패";
+                    }
+                })
+                .catch(error => {
+                    console.error("로그인 오류:", error);
+                    document.getElementById("loginErrorMessage").style.display = "block";
+                    document.getElementById("loginErrorMessage").innerText = "로그인 중 오류가 발생했습니다.";
+                });
+            };
+
+            // CSRF 토큰을 가져오는 함수
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== "") {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+    </script>
+</body>
+</html>
